@@ -477,7 +477,14 @@
     return changed;
   }
 
-  if (!setup()) return;
+  log("[pc] v1.1.1 start");
+  var setupOk = false;
+  try {
+    setupOk = setup();
+  } catch (e) {
+    log("[pc] setup error: " + e);
+  }
+  if (!setupOk) return;
 
   // Shared state for app settings and player bar
   function readPrefs() {
@@ -510,7 +517,23 @@
   var lastScanMs = 0;
   var abWarned = false;
 
+  var tickCount = 0;
+  var lastError = "";
+
   setInterval(function () {
+    try {
+      tick();
+    } catch (e) {
+      // Log each new error once
+      var msg = String(e);
+      if (msg !== lastError) log("[pc] tick error: " + msg);
+      lastError = msg;
+    }
+  }, TICK_MS);
+
+  function tick() {
+    tickCount++;
+    if (tickCount === 1) log("[pc] first tick ok");
     if (!r_pref_bool("pc_enabled")) {
       if (bars.length > 0) destroyAllBars();
       return;
@@ -619,7 +642,7 @@
       }
     }
     lastAbOn = state.abOn;
-  }, TICK_MS);
+  }
 
   log("[pc] playback control running");
 })();
