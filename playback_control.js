@@ -482,7 +482,7 @@
     return changed;
   }
 
-  log("[pc] v1.2.0 start");
+  log("[pc] v1.2.1 start");
   var setupOk = false;
   try {
     setupOk = setup();
@@ -523,6 +523,11 @@
   var abWarned = false;
 
   var tickCount = 0;
+
+  // Trace the first 3 ticks to find a call that does not return
+  function step(name) {
+    if (tickCount <= 3) log("[pc] tick " + tickCount + " step: " + name);
+  }
   var lastError = "";
 
   setInterval(function () {
@@ -539,6 +544,7 @@
   function tick() {
     tickCount++;
     if (tickCount === 1) log("[pc] first tick ok");
+    if (tickCount % 30 === 0) log("[pc] alive, tick " + tickCount);
     if (!r_pref_bool("pc_enabled")) {
       if (bars.length > 0) destroyAllBars();
       return;
@@ -549,6 +555,7 @@
     var stateChanged = false;
 
     // Track change detection
+    step("title");
     var title = currentTitle();
     if (!sameTitle(title, lastTitle)) {
       if (state.loop && !isNil(lastTitle)) {
@@ -566,8 +573,12 @@
       r_msg2(title, "release");
     }
 
-    updatePosition(isPlaying());
+    step("isPlaying");
+    var playingNow = isPlaying();
+    step("elapsed");
+    updatePosition(playingNow);
 
+    step("prefs");
     // App settings changes
     if (Math.abs(p.rate - lastPref.rate) > 0.001) { state.rate = p.rate; stateChanged = true; }
     if (p.loop !== lastPref.loop) { state.loop = p.loop; stateChanged = true; }
@@ -599,18 +610,21 @@
     }
     lastPref = p;
 
+    step("rate");
     // Playback speed
     if (appliedRate === null || Math.abs(state.rate - appliedRate) > 0.001) {
       applyRate(state.rate);
       appliedRate = state.rate;
     }
 
+    step("loop");
     // Loop current track
     if (state.loop !== appliedLoop) {
       setRepeatOne(state.loop);
       appliedLoop = state.loop;
     }
 
+    step("actions");
     // One-shot actions
     for (var a = 0; a < actions.length; a++) {
       var act = actions[a];
@@ -635,6 +649,7 @@
       for (var j = 0; j < bars.length; j++) pushToBar(bars[j]);
     }
 
+    step("ab");
     // A-B loop
     if (state.abOn) {
       if (state.abB <= state.abA + 1) {
