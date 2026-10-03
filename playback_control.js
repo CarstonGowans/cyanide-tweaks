@@ -482,7 +482,7 @@
     return changed;
   }
 
-  log("[pc] v1.2.1 start");
+  log("[pc] v1.2.2 start");
   var setupOk = false;
   try {
     setupOk = setup();
@@ -491,19 +491,54 @@
   }
   if (!setupOk) return;
 
+  // A setting that is still at its default is not saved, and r_pref_* then
+  // returns false or 0. Use the string form to find unset keys.
+  function prefRaw(key) {
+    try {
+      var v = r_pref_str(key);
+      if (v === undefined || v === null) return "";
+      return String(v).trim();
+    } catch (e) {
+      return "";
+    }
+  }
+
+  function prefBool(key, def) {
+    if (r_pref_bool(key)) return true;
+    var s = prefRaw(key).toLowerCase();
+    if (s === "") return def;
+    return s === "true" || s === "1" || s === "yes";
+  }
+
+  function prefNum(key, def) {
+    var s = prefRaw(key);
+    if (s === "") {
+      var n = r_pref_num(key);
+      return n ? n : def;
+    }
+    var f = parseFloat(s);
+    return isNaN(f) ? r_pref_num(key) : f;
+  }
+
+  var prefKeys = ["pc_enabled", "pc_player_bar", "pc_rate", "pc_loop_track", "pc_ab_end", "pc_skip_sec"];
+  for (var pk = 0; pk < prefKeys.length; pk++) {
+    var key = prefKeys[pk];
+    log("[pc] pref " + key + ": bool=" + r_pref_bool(key) + " num=" + r_pref_num(key) + " str='" + prefRaw(key) + "'");
+  }
+
   // Shared state for app settings and player bar
   function readPrefs() {
     return {
-      rate: r_pref_num("pc_rate") || 1.0,
-      loop: r_pref_bool("pc_loop_track"),
-      ab: r_pref_bool("pc_ab_loop"),
-      abStart: r_pref_num("pc_ab_start"),
-      abEnd: r_pref_num("pc_ab_end"),
-      skipSec: r_pref_num("pc_skip_sec") || 15,
-      fwd: r_pref_bool("pc_skip_fwd"),
-      back: r_pref_bool("pc_skip_back"),
-      bar: r_pref_bool("pc_player_bar"),
-      barTop: r_pref_bool("pc_bar_top")
+      rate: prefNum("pc_rate", 1.0) || 1.0,
+      loop: prefBool("pc_loop_track", false),
+      ab: prefBool("pc_ab_loop", false),
+      abStart: prefNum("pc_ab_start", 0.0),
+      abEnd: prefNum("pc_ab_end", 30.0),
+      skipSec: prefNum("pc_skip_sec", 15.0) || 15,
+      fwd: prefBool("pc_skip_fwd", false),
+      back: prefBool("pc_skip_back", false),
+      bar: prefBool("pc_player_bar", false),
+      barTop: prefBool("pc_bar_top", false)
     };
   }
 
@@ -545,7 +580,7 @@
     tickCount++;
     if (tickCount === 1) log("[pc] first tick ok");
     if (tickCount % 30 === 0) log("[pc] alive, tick " + tickCount);
-    if (!r_pref_bool("pc_enabled")) {
+    if (!prefBool("pc_enabled", true)) {
       if (bars.length > 0) destroyAllBars();
       return;
     }

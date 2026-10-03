@@ -6,7 +6,7 @@
       "id": "com.carstongowans.playbackcontrol",
       "name": "Playback Control",
       "description": "Speed, track loop, A-B loop, and skip, with controls in the lock screen and Control Center player",
-      "version": "1.2.1",
+      "version": "1.2.2",
       "symbol": "playpause.fill",
       "scriptURL": "https://carstongowans.github.io/cyanide-tweaks/playback_control.js"
     },
