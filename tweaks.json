@@ -9,6 +9,14 @@
       "version": "1.2.0",
       "symbol": "playpause.fill",
       "scriptURL": "https://carstongowans.github.io/cyanide-tweaks/playback_control.js"
+    },
+    {
+      "id": "com.carstongowans.hellotest",
+      "name": "Hello Test",
+      "description": "Writes 4 lines to the log to test that tweaks run",
+      "version": "1.0.0",
+      "symbol": "stethoscope",
+      "scriptURL": "https://carstongowans.github.io/cyanide-tweaks/hello_test.js"
     }
   ]
 }
