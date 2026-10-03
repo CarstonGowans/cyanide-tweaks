@@ -1,5 +1,5 @@
 // @param: switch | pc_enabled | Enable playback control | true
-// @param: switch | pc_player_bar | Show controls in player | true
+// @param: switch | pc_player_bar | Show controls in player | false
 // @param: switch | pc_bar_top | Put player controls at top | false
 // @param: slider | pc_rate | Playback speed | 1.0 | 0.5-2.0
 // @param: switch | pc_loop_track | Loop current track | false
@@ -30,9 +30,10 @@
   var KEY_ELAPSED = "kMRMediaRemoteNowPlayingInfoElapsedTime";
 
   // Timing
-  var TICK_MS = 250;
-  var SCAN_MS = 1500;
-  var SCAN_NODE_CAP = 800;
+  // Each r_msg2 is a remote call into SpringBoard, so keep the count low
+  var TICK_MS = 1000;
+  var SCAN_MS = 5000;
+  var SCAN_NODE_CAP = 300;
 
   // Player bar setup
   var SPEEDS = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
@@ -158,19 +159,23 @@
     return ok;
   }
 
+  var hasIsPlaying = null;
+
   function isPlaying() {
-    if (!responds(mc, "isPlaying")) return true;
+    if (hasIsPlaying === null) hasIsPlaying = responds(mc, "isPlaying");
+    if (!hasIsPlaying) return true;
     return toInt(r_msg2(mc, "isPlaying")) !== 0;
   }
+
+  // Key strings are made once and kept
+  var keyCache = {};
 
   function infoValue(keyName) {
     if (!infoSel) return 0;
     var info = r_msg2(mc, infoSel);
     if (isNil(info)) return 0;
-    var k = r_nsstr(keyName);
-    var v = r_msg2(info, "objectForKey:", k);
-    r_msg2(k, "release");
-    return v;
+    if (!keyCache[keyName]) keyCache[keyName] = r_nsstr(keyName);
+    return r_msg2(info, "objectForKey:", keyCache[keyName]);
   }
 
   // Returns a retained title NSString, or 0
@@ -477,7 +482,7 @@
     return changed;
   }
 
-  log("[pc] v1.1.1 start");
+  log("[pc] v1.2.0 start");
   var setupOk = false;
   try {
     setupOk = setup();
